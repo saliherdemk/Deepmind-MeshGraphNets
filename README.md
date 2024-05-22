@@ -44,8 +44,7 @@ Download a dataset:
 
 Train a model:
 
-    python -m run_model --mode=train --model=cloth \
-        --checkpoint_dir=/home/mnt/HDD/deepmind/chk --dataset_dir=/home/mnt/HDD/deepmind/flag_data/output
+    python -m run_model --mode=train --model=cloth --checkpoint_dir=/home/mnt/HDD/deepmind/chk --dataset_dir=/home/mnt/HDD/deepmind/flag_data/output
 
 Generate some trajectory rollouts:
 

@@ -42,6 +42,7 @@ flags.DEFINE_enum('rollout_split', 'valid', ['train', 'test', 'valid'],
                   'Dataset split to use for rollouts.')
 flags.DEFINE_integer('num_rollouts', 10, 'No. of rollout trajectories')
 flags.DEFINE_integer('num_training_steps', int(10e6), 'No. of training steps')
+flags.DEFINE_string('wind', 'false', 'Data contains wind information')
 
 PARAMETERS = {
     'cloth': dict(noise=0.003, gamma=0.1, field='world_pos', history=True,
@@ -122,15 +123,14 @@ def evaluator(model, params):
         logging.info('Starting rollout trajectory %d', traj_idx)
         scalar_data, traj_data = sess.run([scalar_op, traj_ops])
         save_to_file(FLAGS.rollout_path, scalar_data, traj_data)
+        
+        logging.info('Finished rollout trajectory %d', traj_idx)
         continue 
         trajectories.append(traj_data)
         scalars.append(scalar_data)
         logging.info('Finished rollout trajectory %d', traj_idx)
       except Exception as e:
         logging.error('Error processing rollout trajectory %d: %s', traj_idx, e)
-
-
-
 
 def main(argv):
   del argv
@@ -142,7 +142,7 @@ def main(argv):
       latent_size=128,
       num_layers=2,
       message_passing_steps=15)
-  model = params['model'].Model(learned_model)
+  model = params['model'].Model(learned_model, FLAGS.wind == 'true')
   if FLAGS.mode == 'train':
     learner(model, params)
   elif FLAGS.mode == 'eval':
