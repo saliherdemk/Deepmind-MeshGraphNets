@@ -42,18 +42,22 @@ Download a dataset:
 
 ## Running the model
 
+May need `sudo` for creating files.
 Train a model:
 
-    python -m run_model --mode=train --model=cloth --checkpoint_dir=/home/mnt/HDD/deepmind/chk --dataset_dir=/home/mnt/HDD/deepmind/flag_data/output
+    python -m run_model --mode=train --checkpoint_dir=/home/mnt/HDD/deepmind/chk --dataset_dir=/home/mnt/HDD/deepmind/flag_data/output --wind=true
+
 
 Generate some trajectory rollouts:
 
-    python -m run_model --mode=eval --model=cloth \
-        --checkpoint_dir=/home/mnt/HDD/deepmind/chk --dataset_dir=/home/mnt/HDD/deepmind/flag_data/output --rollout_path=/home/mnt/HDD/deepmind/rollouts/rollout.json --num_rollouts=2
+    
+    python -m run_model --mode=eval --checkpoint_dir=chk --dataset_dir=flag_data/output --wind=true --rollout_path=rollouts/rollout.json --num_rollouts=2
+
 
 Plot a trajectory:
 
-    python -m meshgraphnets.plot_cloth --rollout_path=${DATA}/rollout_flag.pkl
+    python -m plot_cloth --rollout_path=rollouts/rollout0.pkl
+
 
 The instructions above train a model for the `flag_simple` domain; for
 the `cylinder_flow` dataset, use `--model=cfd` and the `plot_cfd` script.

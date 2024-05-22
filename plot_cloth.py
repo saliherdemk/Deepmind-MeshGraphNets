@@ -20,6 +20,7 @@ import pickle
 import json
 from absl import app
 from absl import flags
+import numpy as np
 
 from matplotlib import animation
 import matplotlib.pyplot as plt
@@ -29,39 +30,42 @@ flags.DEFINE_string('rollout_path', None, 'Path to rollout pickle file')
 
 
 def main(unused_argv):
-  with open(FLAGS.rollout_path, 'rb') as fp:
-    rollout_data = json.load(fp)
+    is_json = FLAGS.rollout_path.split(".").pop() == "json"
+    
+    with open(FLAGS.rollout_path, 'rb') as fp:
+        if is_json:
+            rollout_data = json.load(fp)
+        else:
+            rollout_data = pickle.load(fp)
 
-  fig = plt.figure(figsize=(8, 8))
-  ax = fig.add_subplot(111, projection='3d')
-  skip = 10
-  num_steps = rollout_data[0]['gt_pos'].shape[0]
-  num_frames = len(rollout_data) * num_steps // skip
+    # Convert to numpy arrays
+    for key in ['gt_pos', 'pred_pos', 'cells']:
+        rollout_data[key] = np.array(rollout_data[key])
 
-  # compute bounds
-  bounds = []
-  for trajectory in rollout_data:
-    bb_min = trajectory['gt_pos'].min(axis=(0, 1))
-    bb_max = trajectory['gt_pos'].max(axis=(0, 1))
-    bounds.append((bb_min, bb_max))
+    fig = plt.figure(figsize=(8, 8))
+    ax = fig.add_subplot(111, projection='3d')
+    skip = 10
+    num_steps = rollout_data['gt_pos'].shape[0]
+    num_frames = len(rollout_data) * num_steps // skip
 
-  def animate(num):
-    step = (num*skip) % num_steps
-    traj = (num*skip) // num_steps
-    ax.cla()
-    bound = bounds[traj]
-    ax.set_xlim([bound[0][0], bound[1][0]])
-    ax.set_ylim([bound[0][1], bound[1][1]])
-    ax.set_zlim([bound[0][2], bound[1][2]])
-    pos = rollout_data[traj]['pred_pos'][step]
-    faces = rollout_data[traj]['faces'][step]
-    ax.plot_trisurf(pos[:, 0], pos[:, 1], faces, pos[:, 2], shade=True)
-    ax.set_title('Trajectory %d Step %d' % (traj, step))
-    return fig,
+    bb_min = rollout_data['gt_pos'].min(axis=(0, 1))
+    bb_max = rollout_data['gt_pos'].max(axis=(0, 1))
+    
+    def animate(num):
+        step = (num*skip) % num_steps
+        ax.cla()
+        bound = (bb_min,bb_max)
+        ax.set_xlim([bound[0][0], bound[1][0]])
+        ax.set_ylim([bound[0][1], bound[1][1]])
+        ax.set_zlim([bound[0][2], bound[1][2]])
+        pos = rollout_data['pred_pos'][step]
+        faces = rollout_data['cells'][step]
+        ax.plot_trisurf(pos[:, 0], pos[:, 1], faces, pos[:, 2], shade=True)
+        ax.set_title(f'Trajectory {FLAGS.rollout_path} Step {step}')
+        return fig,
 
-  _ = animation.FuncAnimation(fig, animate, frames=num_frames, interval=100)
-  plt.show(block=True)
-
+    _ = animation.FuncAnimation(fig, animate, frames=num_frames, interval=100)
+    plt.show(block=True)
 
 if __name__ == '__main__':
   app.run(main)

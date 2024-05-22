@@ -32,23 +32,16 @@ import json
 FLAGS = flags.FLAGS
 flags.DEFINE_enum('mode', 'train', ['train', 'eval'],
                   'Train model, or run evaluation.')
-flags.DEFINE_enum('model', None, ['cfd', 'cloth'],
-                  'Select model to run.')
+
 flags.DEFINE_string('checkpoint_dir', None, 'Directory to save checkpoint')
 flags.DEFINE_string('dataset_dir', None, 'Directory to load dataset from.')
 flags.DEFINE_string('rollout_path', None,
-                    'Pickle file to save eval trajectories')
+                    'Directory to save eval trajectories')
 flags.DEFINE_enum('rollout_split', 'valid', ['train', 'test', 'valid'],
                   'Dataset split to use for rollouts.')
 flags.DEFINE_integer('num_rollouts', 10, 'No. of rollout trajectories')
 flags.DEFINE_integer('num_training_steps', int(10e6), 'No. of training steps')
 flags.DEFINE_string('wind', 'false', 'Data contains wind information')
-
-PARAMETERS = {
-    'cloth': dict(noise=0.003, gamma=0.1, field='world_pos', history=True,
-                  size=3, batch=1, model=cloth_model, evaluator=cloth_eval)
-}
-
 
 def learner(model, params):
   """Run a learner job."""
@@ -90,16 +83,18 @@ def learner(model, params):
     logging.info('Training complete.')
     
 
-def save_to_file(path, scalar_data, traj_data):
-    # for key in scalars:
-    #   logging.info('%s: %g', key, np.mean([x[key] for x in scalars]))
-    is_json = path.split(".")[-1] == "json"
+def save_to_file(path, is_json, scalar_data, traj_data, id):
+    # for key in scalar_data:
+    #   logging.info('%s: %g', key, np.mean([x[key] for x in scalar_data]))
+    
+    traj_data["errors"] = {k: float(v) for k, v in scalar_data.items()}
     if(is_json):
-      with open(path, 'w+') as fp:
         trajectories_list = {k: v.tolist() if isinstance(v, np.ndarray) else v for k, v in traj_data.items()}
-        json.dump(trajectories_list, fp)
+
+        with open(path + f"{id}.json", 'w+') as fp:
+          json.dump(trajectories_list, fp)
     else:
-      with open(path, 'wb') as fp:
+      with open(path + f"{id}.pkl", 'wb') as fp:
         pickle.dump(traj_data, fp)
 
 
@@ -116,19 +111,19 @@ def evaluator(model, params):
       checkpoint_dir=FLAGS.checkpoint_dir,
       save_checkpoint_secs=None,
       save_checkpoint_steps=None) as sess:
-    trajectories = []
-    scalars = []
     for traj_idx in range(FLAGS.num_rollouts):
       try:
         logging.info('Starting rollout trajectory %d', traj_idx)
         scalar_data, traj_data = sess.run([scalar_op, traj_ops])
-        save_to_file(FLAGS.rollout_path, scalar_data, traj_data)
+        
+        path_arr = FLAGS.rollout_path.split(".")
+        is_json = path_arr.pop() == "json"
+        path = "".join(path_arr)
+        
+        save_to_file(path, is_json, scalar_data, traj_data, traj_idx)
         
         logging.info('Finished rollout trajectory %d', traj_idx)
-        continue 
-        trajectories.append(traj_data)
-        scalars.append(scalar_data)
-        logging.info('Finished rollout trajectory %d', traj_idx)
+
       except Exception as e:
         logging.error('Error processing rollout trajectory %d: %s', traj_idx, e)
 
@@ -136,13 +131,14 @@ def main(argv):
   del argv
   tf.enable_resource_variables()
   tf.disable_eager_execution()
-  params = PARAMETERS[FLAGS.model]
+  params = dict(noise=0.003, gamma=0.1, field='world_pos', history=True,
+                  size=3, batch=1, model=cloth_model, evaluator=cloth_eval)
   learned_model = core_model.EncodeProcessDecode(
       output_size=params['size'],
       latent_size=128,
       num_layers=2,
       message_passing_steps=15)
-  model = params['model'].Model(learned_model, FLAGS.wind == 'true')
+  model = cloth_model.Model(learned_model, FLAGS.wind == 'true')
   if FLAGS.mode == 'train':
     learner(model, params)
   elif FLAGS.mode == 'eval':
