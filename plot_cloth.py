@@ -10,7 +10,7 @@
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or  implied.
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ============================================================================
@@ -52,9 +52,9 @@ def main(unused_argv):
     bb_max = rollout_data['gt_pos'].max(axis=(0, 1))
     
     def animate(num):
-        step = (num*skip) % num_steps
+        step = (num * skip) % num_steps
         ax.cla()
-        bound = (bb_min,bb_max)
+        bound = (bb_min, bb_max)
         ax.set_xlim([bound[0][0], bound[1][0]])
         ax.set_ylim([bound[0][1], bound[1][1]])
         ax.set_zlim([bound[0][2], bound[1][2]])
@@ -68,4 +68,4 @@ def main(unused_argv):
     plt.show(block=True)
 
 if __name__ == '__main__':
-  app.run(main)
+    app.run(main)

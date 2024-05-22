@@ -10,7 +10,7 @@
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or  implied.
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ============================================================================
@@ -44,44 +44,44 @@ flags.DEFINE_integer('num_training_steps', int(10e6), 'No. of training steps')
 flags.DEFINE_string('wind', 'false', 'Data contains wind information')
 
 def learner(model, params):
-  """Run a learner job."""
-  ds = dataset.load_dataset(FLAGS.dataset_dir, 'train')
-  ds = dataset.add_targets(ds, [params['field']], add_history=params['history'])
-  ds = dataset.split_and_preprocess(ds, noise_field=params['field'],
-                                    noise_scale=params['noise'],
-                                    noise_gamma=params['gamma'])
-  inputs = tf.data.make_one_shot_iterator(ds).get_next()
+    """Run a learner job."""
+    ds = dataset.load_dataset(FLAGS.dataset_dir, 'train')
+    ds = dataset.add_targets(ds, [params['field']], add_history=params['history'])
+    ds = dataset.split_and_preprocess(ds, noise_field=params['field'],
+                                      noise_scale=params['noise'],
+                                      noise_gamma=params['gamma'])
+    inputs = tf.data.make_one_shot_iterator(ds).get_next()
 
-  loss_op = model.loss(inputs)
-  global_step = tf.train.create_global_step()
-  lr = tf.train.exponential_decay(learning_rate=1e-4,
-                                  global_step=global_step,
-                                  decay_steps=int(5e6),
-                                  decay_rate=0.1) + 1e-6
-  optimizer = tf.train.AdamOptimizer(learning_rate=lr)
-  train_op = optimizer.minimize(loss_op, global_step=global_step)
-  # Don't train for the first few steps, just accumulate normalization stats
-  train_op = tf.cond(tf.less(global_step, 1000),
-                     lambda: tf.group(tf.assign_add(global_step, 1)),
-                     lambda: tf.group(train_op))
+    loss_op = model.loss(inputs)
+    global_step = tf.train.create_global_step()
+    lr = tf.train.exponential_decay(learning_rate=1e-4,
+                                    global_step=global_step,
+                                    decay_steps=int(5e6),
+                                    decay_rate=0.1) + 1e-6
+    optimizer = tf.train.AdamOptimizer(learning_rate=lr)
+    train_op = optimizer.minimize(loss_op, global_step=global_step)
+    # Don't train for the first few steps, just accumulate normalization stats
+    train_op = tf.cond(tf.less(global_step, 1000),
+                       lambda: tf.group(tf.assign_add(global_step, 1)),
+                       lambda: tf.group(train_op))
 
-  pbar = tqdm(total=FLAGS.num_training_steps)
+    pbar = tqdm(total=FLAGS.num_training_steps)
 
-  last_step = -1
-  with tf.train.MonitoredTrainingSession(
-      hooks=[tf.train.StopAtStepHook(last_step=FLAGS.num_training_steps)],
-      checkpoint_dir=FLAGS.checkpoint_dir,
-      save_checkpoint_secs=600) as sess:
+    last_step = -1
+    with tf.train.MonitoredTrainingSession(
+            hooks=[tf.train.StopAtStepHook(last_step=FLAGS.num_training_steps)],
+            checkpoint_dir=FLAGS.checkpoint_dir,
+            save_checkpoint_secs=600) as sess:
 
-    while not sess.should_stop():
-      _, step, loss = sess.run([train_op, global_step, loss_op])
-      if step % 1000 == 0:
-        logging.info(f'Step {step}: Loss {loss}')
-      pbar.set_description(f"Step {step}: Loss {loss}")
-      pbar.update(step - last_step)
-      last_step = step
-    logging.info('Training complete.')
-    
+        while not sess.should_stop():
+            _, step, loss = sess.run([train_op, global_step, loss_op])
+            if step % 1000 == 0:
+                logging.info(f'Step {step}: Loss {loss}')
+            pbar.set_description(f"Step {step}: Loss {loss}")
+            pbar.update(step - last_step)
+            last_step = step
+        logging.info('Training complete.')
+
 
 def save_to_file(path, is_json, scalar_data, traj_data, id):
     # for key in scalar_data:
@@ -92,57 +92,57 @@ def save_to_file(path, is_json, scalar_data, traj_data, id):
         trajectories_list = {k: v.tolist() if isinstance(v, np.ndarray) else v for k, v in traj_data.items()}
 
         with open(path + f"{id}.json", 'w+') as fp:
-          json.dump(trajectories_list, fp)
+            json.dump(trajectories_list, fp)
     else:
-      with open(path + f"{id}.pkl", 'wb') as fp:
-        pickle.dump(traj_data, fp)
+        with open(path + f"{id}.pkl", 'wb') as fp:
+            pickle.dump(traj_data, fp)
 
 
 def evaluator(model, params):
-  """Run a model rollout trajectory."""
-  ds = dataset.load_dataset(FLAGS.dataset_dir, FLAGS.rollout_split)
-  ds = dataset.add_targets(ds, [params['field']], add_history=params['history'])
-  inputs = tf.data.make_one_shot_iterator(ds).get_next()
+    """Run a model rollout trajectory."""
+    ds = dataset.load_dataset(FLAGS.dataset_dir, FLAGS.rollout_split)
+    ds = dataset.add_targets(ds, [params['field']], add_history=params['history'])
+    inputs = tf.data.make_one_shot_iterator(ds).get_next()
 
-  scalar_op, traj_ops = params['evaluator'].evaluate(model, inputs)
-  tf.train.create_global_step()
+    scalar_op, traj_ops = params['evaluator'].evaluate(model, inputs)
+    tf.train.create_global_step()
 
-  with tf.train.MonitoredTrainingSession(
-      checkpoint_dir=FLAGS.checkpoint_dir,
-      save_checkpoint_secs=None,
-      save_checkpoint_steps=None) as sess:
-    for traj_idx in range(FLAGS.num_rollouts):
-      try:
-        logging.info('Starting rollout trajectory %d', traj_idx)
-        scalar_data, traj_data = sess.run([scalar_op, traj_ops])
-        
-        path_arr = FLAGS.rollout_path.split(".")
-        is_json = path_arr.pop() == "json"
-        path = "".join(path_arr)
-        
-        save_to_file(path, is_json, scalar_data, traj_data, traj_idx)
-        
-        logging.info('Finished rollout trajectory %d', traj_idx)
+    with tf.train.MonitoredTrainingSession(
+            checkpoint_dir=FLAGS.checkpoint_dir,
+            save_checkpoint_secs=None,
+            save_checkpoint_steps=None) as sess:
+        for traj_idx in range(FLAGS.num_rollouts):
+            try:
+                logging.info('Starting rollout trajectory %d', traj_idx)
+                scalar_data, traj_data = sess.run([scalar_op, traj_ops])
+                
+                path_arr = FLAGS.rollout_path.split(".")
+                is_json = path_arr.pop() == "json"
+                path = "".join(path_arr)
+                
+                save_to_file(path, is_json, scalar_data, traj_data, traj_idx)
+                
+                logging.info('Finished rollout trajectory %d', traj_idx)
 
-      except Exception as e:
-        logging.error('Error processing rollout trajectory %d: %s', traj_idx, e)
+            except Exception as e:
+                logging.error('Error processing rollout trajectory %d: %s', traj_idx, e)
 
 def main(argv):
-  del argv
-  tf.enable_resource_variables()
-  tf.disable_eager_execution()
-  params = dict(noise=0.003, gamma=0.1, field='world_pos', history=True,
+    del argv
+    tf.enable_resource_variables()
+    tf.disable_eager_execution()
+    params = dict(noise=0.003, gamma=0.1, field='world_pos', history=True,
                   size=3, batch=1, model=cloth_model, evaluator=cloth_eval)
-  learned_model = core_model.EncodeProcessDecode(
-      output_size=params['size'],
-      latent_size=128,
-      num_layers=2,
-      message_passing_steps=15)
-  model = cloth_model.Model(learned_model, FLAGS.wind == 'true')
-  if FLAGS.mode == 'train':
-    learner(model, params)
-  elif FLAGS.mode == 'eval':
-    evaluator(model, params)
+    learned_model = core_model.EncodeProcessDecode(
+        output_size=params['size'],
+        latent_size=128,
+        num_layers=2,
+        message_passing_steps=15)
+    model = cloth_model.Model(learned_model, FLAGS.wind == 'true')
+    if FLAGS.mode == 'train':
+        learner(model, params)
+    elif FLAGS.mode == 'eval':
+        evaluator(model, params)
 
 if __name__ == '__main__':
-  app.run(main)
+    app.run(main)
