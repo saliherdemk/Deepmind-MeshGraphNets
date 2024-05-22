@@ -44,14 +44,13 @@ Download a dataset:
 
 Train a model:
 
-    python -m meshgraphnets.run_model --mode=train --model=cloth \
-        --checkpoint_dir=${DATA}/chk --dataset_dir=${DATA}/flag_simple
+    python -m run_model --mode=train --model=cloth \
+        --checkpoint_dir=/home/mnt/HDD/deepmind/chk --dataset_dir=/home/mnt/HDD/deepmind/flag_data/output
 
 Generate some trajectory rollouts:
 
-    python -m meshgraphnets.run_model --mode=eval --model=cloth \
-        --checkpoint_dir=${DATA}/chk --dataset_dir=${DATA}/flag_simple \
-        --rollout_path=${DATA}/rollout_flag.pkl
+    python -m run_model --mode=eval --model=cloth \
+        --checkpoint_dir=/home/mnt/HDD/deepmind/chk --dataset_dir=/home/mnt/HDD/deepmind/flag_data/output --rollout_path=/home/mnt/HDD/deepmind/rollouts/rollout.json --num_rollouts=2
 
 Plot a trajectory:
 

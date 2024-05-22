@@ -34,7 +34,7 @@ def _parse(proto, meta):
   for key, field in meta['features'].items():
     data = tf.io.decode_raw(features[key].values, getattr(tf, field['dtype']))
     data = tf.reshape(data, field['shape'])
-    if field["for_sim"]: 
+    if field.get("for_sim", False): 
       out[key] = data
       continue
     if field['type'] == 'static':

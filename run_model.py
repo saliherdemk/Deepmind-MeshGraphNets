@@ -87,6 +87,19 @@ def learner(model, params):
       pbar.update(step - last_step)
       last_step = step
     logging.info('Training complete.')
+    
+
+def save_to_file(path, scalar_data, traj_data):
+    # for key in scalars:
+    #   logging.info('%s: %g', key, np.mean([x[key] for x in scalars]))
+    is_json = path.split(".")[-1] == "json"
+    if(is_json):
+      with open(path, 'w+') as fp:
+        trajectories_list = {k: v.tolist() if isinstance(v, np.ndarray) else v for k, v in traj_data.items()}
+        json.dump(trajectories_list, fp)
+    else:
+      with open(path, 'wb') as fp:
+        pickle.dump(traj_data, fp)
 
 
 def evaluator(model, params):
@@ -94,6 +107,7 @@ def evaluator(model, params):
   ds = dataset.load_dataset(FLAGS.dataset_dir, FLAGS.rollout_split)
   ds = dataset.add_targets(ds, [params['field']], add_history=params['history'])
   inputs = tf.data.make_one_shot_iterator(ds).get_next()
+
   scalar_op, traj_ops = params['evaluator'].evaluate(model, inputs)
   tf.train.create_global_step()
 
@@ -107,22 +121,16 @@ def evaluator(model, params):
       try:
         logging.info('Starting rollout trajectory %d', traj_idx)
         scalar_data, traj_data = sess.run([scalar_op, traj_ops])
+        save_to_file(FLAGS.rollout_path, scalar_data, traj_data)
+        continue 
         trajectories.append(traj_data)
         scalars.append(scalar_data)
         logging.info('Finished rollout trajectory %d', traj_idx)
       except Exception as e:
         logging.error('Error processing rollout trajectory %d: %s', traj_idx, e)
-    for key in scalars[0]:
-      logging.info('%s: %g', key, np.mean([x[key] for x in scalars]))
 
-    is_json = FLAGS.rollout_path.split(".")[-1] == "json"
-    if(is_json):
-      with open(FLAGS.rollout_path, 'w+') as fp:
-        trajectories_list = [{k: v.tolist() if isinstance(v, np.ndarray) else v for k, v in traj.items()} for traj in trajectories]
-        json.dump(trajectories_list, fp)
-    else:
-      with open(FLAGS.rollout_path, 'wb') as fp:
-        pickle.dump(trajectories, fp)
+
+
 
 def main(argv):
   del argv

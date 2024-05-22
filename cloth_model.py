@@ -34,7 +34,7 @@ class Model(snt.AbstractModule):
       self._output_normalizer = normalization.Normalizer(
           size=3, name='output_normalizer')
       self._node_normalizer = normalization.Normalizer(
-          size=3+common.NodeType.SIZE + 3, name='node_normalizer')
+          size=3+common.NodeType.SIZE, name='node_normalizer')
       self._edge_normalizer = normalization.Normalizer(
           size=7, name='edge_normalizer')  # 2D coord + 3D coord + 2*length = 7
 
@@ -45,11 +45,11 @@ class Model(snt.AbstractModule):
     node_type = tf.one_hot(inputs['node_type'][:, 0], common.NodeType.SIZE)
     node_features = tf.concat([velocity, node_type], axis=-1)
 
-    wind_velocities = tf.ones([velocity.shape[0], inputs['wind_training'].shape[0]]) * inputs['wind_training']
-    noise = tf.random.normal(tf.shape(wind_velocities), stddev=0.1, dtype=tf.float32)
-    wind_velocities += noise
-
-    node_features = tf.concat([node_features, wind_velocities], axis=-1)
+    # wind_velocities = tf.ones([velocity.shape[0], inputs['wind_training'].shape[0]]) * inputs['wind_training']
+    # noise = tf.random.normal(tf.shape(wind_velocities), stddev=0.1, dtype=tf.float32)
+    # wind_velocities += noise
+    #
+    # node_features = tf.concat([node_features, wind_velocities], axis=-1)
 
     # construct graph edges
     senders, receivers = common.triangles_to_edges(inputs['cells'])
