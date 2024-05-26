@@ -59,7 +59,7 @@ def evaluate(model, inputs):
         'mesh_pos': inputs['mesh_pos'],
         'gt_pos': inputs['world_pos'],
         'pred_pos': prediction,
-        # 'wind': inputs["wind"]
+        'wind': inputs["wind"]
     }
 
     return scalars, traj_ops
