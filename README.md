@@ -56,7 +56,7 @@ Generate some trajectory rollouts:
 
 Plot a trajectory:
 
-    python -m plot_cloth --rollout_path=rollouts/rollout0.pkl
+    python -m plot_cloth --rollout_path=rollouts/rollout0.json
 
 
 The instructions above train a model for the `flag_simple` domain; for
