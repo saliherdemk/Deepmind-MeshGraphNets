@@ -59,6 +59,9 @@ def learner(model, params):
                                     decay_steps=int(5e6),
                                     decay_rate=0.1) + 1e-6
     optimizer = tf.train.AdamOptimizer(learning_rate=lr)
+
+    tf.summary.scalar('loss', loss_op)
+   
     train_op = optimizer.minimize(loss_op, global_step=global_step)
     # Don't train for the first few steps, just accumulate normalization stats
     train_op = tf.cond(tf.less(global_step, 1000),
