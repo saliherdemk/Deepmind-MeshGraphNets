@@ -1,7 +1,0 @@
-tensorflow-gpu==1.15
-dm-sonnet<2
-matplotlib
-absl-py
-numpy
-protobuf==3.20
-tqdm

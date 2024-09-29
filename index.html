@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+  </head>
+  <body>
+    <main>
+      <input type="file" name="" value="" id="file-chooser" />
+      <div id="canvas-container">
+        <div id="resize-handle"></div>
+      </div>
+      <div id="controls">
+        <div id="vertex-container">
+          <h2>Vertecies</h2>
+
+          <div id="vertex-btn-container"></div>
+          <div class="highlight-btn-container">
+            <div>
+              <button type="button" onclick="highlightAllVertecies()">
+                Highlight All
+              </button>
+              <button type="button" onclick="clearAllHighlightVertecies()">
+                Clear Highlight
+              </button>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="vertex-checkbox" checked />
+              <span class="slider round"></span>
+            </label>
+          </div>
+        </div>
+        <div id="mesh-container">
+          <h2>Meshes</h2>
+
+          <div id="mesh-btn-container"></div>
+          <div class="highlight-btn-container">
+            <div>
+              <button type="button" onclick="highlightAllMeshes()">
+                Highlight All
+              </button>
+              <button type="button" onclick="clearAllHighlightMeshes()">
+                Clear Highlight
+              </button>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="mesh-checkbox" checked />
+              <span class="slider round"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </main>
+    <script src="data.js"></script>
+    <script src="js/variables.js"></script>
+    <script src="js/Organizer.js"></script>
+    <script src="js/Highlightable.js"></script>
+    <script src="js/Mesh.js"></script>
+    <script src="js/Vertex.js"></script>
+    <script src="js/script.js"></script>
+    <script src="js/canvas.js"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.2/p5.min.js"
+      integrity="sha512-eu9vkh+EbAsW3fMmPTj/DP5W3UegIdu0Z/OABMocvoofx43MYBkcQ9hRIVxZndV1vcCYQwBg+U1PkWl04TD0Jg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+  </body>
+</html>
