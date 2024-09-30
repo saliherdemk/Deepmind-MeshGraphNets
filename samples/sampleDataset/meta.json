@@ -1,0 +1,72 @@
+{
+    "simulator": "blender",
+    "features": {
+        "cells": {
+            "type": "static",
+            "shape": [
+                1,
+                3362,
+                3
+            ],
+            "dtype": "int32",
+            "for_sim": false
+        },
+        "mesh_pos": {
+            "type": "static",
+            "shape": [
+                1,
+                1764,
+                2
+            ],
+            "dtype": "float32",
+            "for_sim": false
+        },
+        "node_type": {
+            "type": "static",
+            "shape": [
+                1,
+                1764,
+                1
+            ],
+            "dtype": "int32",
+            "for_sim": false
+        },
+        "world_pos": {
+            "type": "dynamic",
+            "shape": [
+                250,
+                1764,
+                3
+            ],
+            "dtype": "float32",
+            "for_sim": false
+        },
+        "wind_training": {
+            "type": "dynamic",
+            "shape": [
+                250,
+                3
+            ],
+            "dtype": "float32",
+            "for_sim": false
+        },
+        "wind": {
+            "type": "dynamic",
+            "shape": [
+                250,
+                4
+            ],
+            "dtype": "float32",
+            "for_sim": true
+        }
+    },
+    "field_names": [
+        "cells",
+        "mesh_pos",
+        "node_type",
+        "world_pos",
+        "wind_training",
+        "wind"
+    ],
+    "trajectory_length": 250
+}

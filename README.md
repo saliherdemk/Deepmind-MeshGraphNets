@@ -14,7 +14,7 @@ This repository provides a specialized version of Learning Mesh-Based Simulation
 
 ## Setup
 
-Some dependencies have been updated, requiring Python 3.7. If you use pyenv, it will automatically select the correct version from the .python-version file. Once you have done, prepare enviorment and install dependencies. 
+Some dependencies have been updated, requiring Python 3.7.10. Change the local Python version with [pyenv](https://github.com/pyenv/pyenv) to the value inside the .python-version file. Once you have done this, prepare the environment and install the dependencies.
 
 ```
 python -m venv .venv
@@ -29,13 +29,13 @@ If you have new generation card, you have to use [nvidia-tensorflow](https://git
 May need `sudo` for creating files.
 Train a model:
 ```
-   python -m run_model --mode=train --checkpoint_dir=/home/saliherdemk/Deepmind-MeshGraphNets/chk/ --dataset_dir=/home/saliherdemk/Deepmind-MeshGraphNets/dataset/ --wind=true 
+   python -m run_model --mode=train --checkpoint_dir=samples/sampleChk/ --dataset_dir=samples/sampleDataset/ --wind=true 
 ```
 
 Generate some trajectory rollouts:
 
     
-    python -m run_model --mode=eval --checkpoint_dir=chk --dataset_dir=dataset --wind=true --rollout_path=rollouts/rollout.json --num_rollouts=2
+    python -m run_model --mode=eval --checkpoint_dir=samples/sampleChk/ --dataset_dir=samples/sampleDataset/ --wind=true --rollout_path=rollouts/rollout.json --num_rollouts=2
 
 
 Plot a trajectory:
