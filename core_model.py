@@ -21,14 +21,16 @@ import functools
 import sonnet as snt
 import tensorflow.compat.v1 as tf
 
-EdgeSet = collections.namedtuple('EdgeSet', ['name', 'features', 'senders', 'receivers'])
-MultiGraph = collections.namedtuple('Graph', ['node_features', 'edge_sets'])
+EdgeSet = collections.namedtuple(
+    "EdgeSet", ["name", "features", "senders", "receivers"]
+)
+MultiGraph = collections.namedtuple("Graph", ["node_features", "edge_sets"])
 
 
 class GraphNetBlock(snt.AbstractModule):
     """Multi-Edge Interaction Network with residual connections."""
 
-    def __init__(self, model_fn, name='GraphNetBlock'):
+    def __init__(self, model_fn, name="GraphNetBlock"):
         super(GraphNetBlock, self).__init__(name=name)
         self._model_fn = model_fn
 
@@ -37,7 +39,7 @@ class GraphNetBlock(snt.AbstractModule):
         sender_features = tf.gather(node_features, edge_set.senders)
         receiver_features = tf.gather(node_features, edge_set.receivers)
         features = [sender_features, receiver_features, edge_set.features]
-        with tf.variable_scope(edge_set.name + '_edge_fn'):
+        with tf.variable_scope(edge_set.name + "_edge_fn"):
             return self._model_fn()(tf.concat(features, axis=-1))
 
     def _update_node_features(self, node_features, edge_sets):
@@ -45,8 +47,12 @@ class GraphNetBlock(snt.AbstractModule):
         num_nodes = tf.shape(node_features)[0]
         features = [node_features]
         for edge_set in edge_sets:
-            features.append(tf.math.unsorted_segment_sum(edge_set.features, edge_set.receivers, num_nodes))
-        with tf.variable_scope('node_fn'):
+            features.append(
+                tf.math.unsorted_segment_sum(
+                    edge_set.features, edge_set.receivers, num_nodes
+                )
+            )
+        with tf.variable_scope("node_fn"):
             return self._model_fn()(tf.concat(features, axis=-1))
 
     def _build(self, graph):
@@ -59,18 +65,30 @@ class GraphNetBlock(snt.AbstractModule):
             new_edge_sets.append(edge_set._replace(features=updated_features))
 
         # apply node function
-        new_node_features = self._update_node_features(graph.node_features, new_edge_sets)
+        new_node_features = self._update_node_features(
+            graph.node_features, new_edge_sets
+        )
 
         # add residual connections
         new_node_features += graph.node_features
-        new_edge_sets = [es._replace(features=es.features + old_es.features) for es, old_es in zip(new_edge_sets, graph.edge_sets)]
+        new_edge_sets = [
+            es._replace(features=es.features + old_es.features)
+            for es, old_es in zip(new_edge_sets, graph.edge_sets)
+        ]
         return MultiGraph(new_node_features, new_edge_sets)
 
 
 class EncodeProcessDecode(snt.AbstractModule):
     """Encode-Process-Decode GraphNet model."""
 
-    def __init__(self, output_size, latent_size, num_layers, message_passing_steps, name='EncodeProcessDecode'):
+    def __init__(
+        self,
+        output_size,
+        latent_size,
+        num_layers,
+        message_passing_steps,
+        name="EncodeProcessDecode",
+    ):
         super(EncodeProcessDecode, self).__init__(name=name)
         self._latent_size = latent_size
         self._output_size = output_size
@@ -87,7 +105,7 @@ class EncodeProcessDecode(snt.AbstractModule):
 
     def _encoder(self, graph):
         """Encodes node and edge features into latent features."""
-        with tf.variable_scope('encoder'):
+        with tf.variable_scope("encoder"):
             node_latents = self._make_mlp(self._latent_size)(graph.node_features)
             new_edges_sets = []
             for edge_set in graph.edge_sets:
@@ -97,7 +115,7 @@ class EncodeProcessDecode(snt.AbstractModule):
 
     def _decoder(self, graph):
         """Decodes node features from graph."""
-        with tf.variable_scope('decoder'):
+        with tf.variable_scope("decoder"):
             decoder = self._make_mlp(self._output_size, layer_norm=False)
             return decoder(graph.node_features)
 

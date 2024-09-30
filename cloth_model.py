@@ -27,52 +27,69 @@ import normalization
 class Model(snt.AbstractModule):
     """Model for static cloth simulation."""
 
-    def __init__(self, learned_model, wind=False, name='Model'):
+    def __init__(self, learned_model, wind=False, name="Model"):
         super(Model, self).__init__(name=name)
         with self._enter_variable_scope():
             self._learned_model = learned_model
             self._output_normalizer = normalization.Normalizer(
-                size=3, name='output_normalizer')
+                size=3, name="output_normalizer"
+            )
             self._node_normalizer = normalization.Normalizer(
-                size=3 + common.NodeType.SIZE + (3 if wind else 0), name='node_normalizer')
+                size=3 + common.NodeType.SIZE + (3 if wind else 0),
+                name="node_normalizer",
+            )
             self._edge_normalizer = normalization.Normalizer(
-                size=7, name='edge_normalizer')  # 2D coord + 3D coord + 2*length = 7
+                size=7, name="edge_normalizer"
+            )  # 2D coord + 3D coord + 2*length = 7
             self.has_wind = wind
 
     def _build_graph(self, inputs, is_training):
         """Builds input graph."""
         # construct graph nodes
-        velocity = inputs['world_pos'] - inputs['prev|world_pos']
-        node_type = tf.one_hot(inputs['node_type'][:, 0], common.NodeType.SIZE)
+        velocity = inputs["world_pos"] - inputs["prev|world_pos"]
+        node_type = tf.one_hot(inputs["node_type"][:, 0], common.NodeType.SIZE)
         node_features = tf.concat([velocity, node_type], axis=-1)
 
         if self.has_wind:
-            wind_velocities = tf.ones([velocity.shape[0], inputs['wind_training'].shape[0]]) * inputs['wind_training']
-            noise = tf.random.normal(tf.shape(wind_velocities), stddev=0.1, dtype=tf.float32)
+            wind_velocities = (
+                tf.ones([velocity.shape[0], inputs["wind_training"].shape[0]])
+                * inputs["wind_training"]
+            )
+            noise = tf.random.normal(
+                tf.shape(wind_velocities), stddev=0.1, dtype=tf.float32
+            )
             wind_velocities += noise
 
             node_features = tf.concat([node_features, wind_velocities], axis=-1)
 
         # construct graph edges
-        senders, receivers = common.triangles_to_edges(inputs['cells'])
-        relative_world_pos = (tf.gather(inputs['world_pos'], senders) -
-                              tf.gather(inputs['world_pos'], receivers))
-        relative_mesh_pos = (tf.gather(inputs['mesh_pos'], senders) -
-                             tf.gather(inputs['mesh_pos'], receivers))
-        edge_features = tf.concat([
-            relative_world_pos,
-            tf.norm(relative_world_pos, axis=-1, keepdims=True),
-            relative_mesh_pos,
-            tf.norm(relative_mesh_pos, axis=-1, keepdims=True)], axis=-1)
+        senders, receivers = common.triangles_to_edges(inputs["cells"])
+        relative_world_pos = tf.gather(inputs["world_pos"], senders) - tf.gather(
+            inputs["world_pos"], receivers
+        )
+        relative_mesh_pos = tf.gather(inputs["mesh_pos"], senders) - tf.gather(
+            inputs["mesh_pos"], receivers
+        )
+        edge_features = tf.concat(
+            [
+                relative_world_pos,
+                tf.norm(relative_world_pos, axis=-1, keepdims=True),
+                relative_mesh_pos,
+                tf.norm(relative_mesh_pos, axis=-1, keepdims=True),
+            ],
+            axis=-1,
+        )
 
         mesh_edges = core_model.EdgeSet(
-            name='mesh_edges',
+            name="mesh_edges",
             features=self._edge_normalizer(edge_features, is_training),
             receivers=receivers,
-            senders=senders)
+            senders=senders,
+        )
         return core_model.MultiGraph(
             node_features=self._node_normalizer(node_features, is_training),
-            edge_sets=[mesh_edges])
+            edge_sets=[mesh_edges],
+        )
 
     def _build(self, inputs):
         graph = self._build_graph(inputs, is_training=False)
@@ -86,15 +103,15 @@ class Model(snt.AbstractModule):
         network_output = self._learned_model(graph)
 
         # build target acceleration
-        cur_position = inputs['world_pos']
-        prev_position = inputs['prev|world_pos']
-        target_position = inputs['target|world_pos']
+        cur_position = inputs["world_pos"]
+        prev_position = inputs["prev|world_pos"]
+        target_position = inputs["target|world_pos"]
         target_acceleration = target_position - 2 * cur_position + prev_position
         target_normalized = self._output_normalizer(target_acceleration)
 
         # build loss
-        loss_mask = tf.equal(inputs['node_type'][:, 0], common.NodeType.NORMAL)
-        error = tf.reduce_sum((target_normalized - network_output)**2, axis=1)
+        loss_mask = tf.equal(inputs["node_type"][:, 0], common.NodeType.NORMAL)
+        error = tf.reduce_sum((target_normalized - network_output) ** 2, axis=1)
         loss = tf.reduce_mean(error[loss_mask])
         return loss
 
@@ -102,7 +119,7 @@ class Model(snt.AbstractModule):
         """Integrate model outputs."""
         acceleration = self._output_normalizer.inverse(per_node_network_output)
         # integrate forward
-        cur_position = inputs['world_pos']
-        prev_position = inputs['prev|world_pos']
+        cur_position = inputs["world_pos"]
+        prev_position = inputs["prev|world_pos"]
         position = 2 * cur_position + acceleration - prev_position
         return position

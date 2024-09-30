@@ -28,14 +28,14 @@ If you have new generation card, you have to use [nvidia-tensorflow](https://git
 
 May need `sudo` for creating files.
 Train a model:
-
-    python -m run_model --mode=train --checkpoint_dir=/home/mnt/HDD/deepmind/chk --dataset_dir=/home/saliherdemk/Deepmind-MeshGraphNets/dataset/ --wind=true
-
+```
+   python -m run_model --mode=train --checkpoint_dir=/home/saliherdemk/Deepmind-MeshGraphNets/chk/ --dataset_dir=/home/saliherdemk/Deepmind-MeshGraphNets/dataset/ --wind=true 
+```
 
 Generate some trajectory rollouts:
 
     
-    python -m run_model --mode=eval --checkpoint_dir=chk --dataset_dir=flag_data/output --wind=true --rollout_path=rollouts/rollout.json --num_rollouts=2
+    python -m run_model --mode=eval --checkpoint_dir=chk --dataset_dir=dataset --wind=true --rollout_path=rollouts/rollout.json --num_rollouts=2
 
 
 Plot a trajectory:

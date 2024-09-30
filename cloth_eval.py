@@ -23,12 +23,12 @@ from common import NodeType
 
 def _rollout(model, initial_state, num_steps):
     """Rolls out a model trajectory."""
-    mask = tf.equal(initial_state['node_type'][:, 0], NodeType.NORMAL)
+    mask = tf.equal(initial_state["node_type"][:, 0], NodeType.NORMAL)
 
     def step_fn(step, prev_pos, cur_pos, trajectory):
-        prediction = model({**initial_state,
-                            'prev|world_pos': prev_pos,
-                            'world_pos': cur_pos})
+        prediction = model(
+            {**initial_state, "prev|world_pos": prev_pos, "world_pos": cur_pos}
+        )
 
         # don't update kinematic nodes
         next_pos = tf.where(mask, prediction, cur_pos)
@@ -38,9 +38,14 @@ def _rollout(model, initial_state, num_steps):
     _, _, _, output = tf.while_loop(
         cond=lambda step, last, cur, traj: tf.less(step, num_steps),
         body=step_fn,
-        loop_vars=(0, initial_state['prev|world_pos'], initial_state['world_pos'],
-                   tf.TensorArray(tf.float32, num_steps)),
-        parallel_iterations=1)
+        loop_vars=(
+            0,
+            initial_state["prev|world_pos"],
+            initial_state["world_pos"],
+            tf.TensorArray(tf.float32, num_steps),
+        ),
+        parallel_iterations=1,
+    )
     return output.stack()
 
 
@@ -48,18 +53,20 @@ def evaluate(model, inputs):
     """Performs model rollouts and create stats."""
     initial_state = {k: v[0] for k, v in inputs.items()}
 
-    num_steps = inputs['cells'].shape[0]
+    num_steps = inputs["cells"].shape[0]
     prediction = _rollout(model, initial_state, num_steps)
 
-    error = tf.reduce_mean((prediction - inputs['world_pos']) ** 2, axis=-1)
-    scalars = {'mse_%d_steps' % horizon: tf.reduce_mean(error[1:horizon + 1])
-               for horizon in [1, 10, 20, 50, 100, 200]}
+    error = tf.reduce_mean((prediction - inputs["world_pos"]) ** 2, axis=-1)
+    scalars = {
+        "mse_%d_steps" % horizon: tf.reduce_mean(error[1 : horizon + 1])
+        for horizon in [1, 10, 20, 50, 100, 200]
+    }
     traj_ops = {
-        'cells': inputs['cells'],
-        'mesh_pos': inputs['mesh_pos'],
-        'gt_pos': inputs['world_pos'],
-        'pred_pos': prediction,
-        'wind': inputs["wind"]
+        "cells": inputs["cells"],
+        "mesh_pos": inputs["mesh_pos"],
+        "gt_pos": inputs["world_pos"],
+        "pred_pos": prediction,
+        "wind": inputs["wind"],
     }
 
     return scalars, traj_ops
