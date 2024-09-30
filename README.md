@@ -24,9 +24,15 @@ pip install -r requirements.txt
 
 If you have new generation card, you have to use [nvidia-tensorflow](https://github.com/NVIDIA/tensorflow) in order to train with gpu.
 
+## Preparing Dataset
+You can create your own dataset using Blender scripts. Open the `Flag-sim.blend` file and generate data using the `Generate Data` script. Once you have created the JSON files, convert them to TFRecord format with `json_to_tfrecord.py`. After this process, you should have `train.tfrecord` (or test.tfrecord-eval.tfrecord) and `meta.json` files.
+
 ## Running the model
 
 May need `sudo` for creating files.
+
+The samples are trivial; they are just meant to give an idea of the file structure and format.
+
 Train a model:
 ```
    python -m run_model --mode=train --checkpoint_dir=samples/sampleChk/ --dataset_dir=samples/sampleDataset/ --wind=true 
@@ -37,9 +43,13 @@ Generate some trajectory rollouts:
     
     python -m run_model --mode=eval --checkpoint_dir=samples/sampleChk/ --dataset_dir=samples/sampleDataset/ --wind=true --rollout_path=rollouts/rollout.json --num_rollouts=2
 
+After you have rollouts, you can either simulate with matplotlib or in a Blender scene.
 
-Plot a trajectory:
+Plot with `matplotlib`:
 
     python -m plot_cloth --rollout_path=rollouts/rollout0.json
+
+Simulate in `blender`: In the prediction script, change the directory and filename, then execute the script. This will create a new scene that contains a P-Flag. You can play the animation. 
+
 
 

@@ -3,6 +3,7 @@ import os
 import bmesh
 import bpy
 
+
 def get_vertices_and_cells_frame_by_frame(end_frame):
     data = {}
     cells = None
@@ -53,12 +54,13 @@ def save_to_file(file, data):
     with open(file, "w+", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 
+
 def main(file, frame_count):
     final_data = play_and_combine_data(frame_count)
     save_to_file(file, final_data)
 
 
-file_path = os.path.expanduser("~/FINAL_PROJECT/data/")
+file_path = os.path.expanduser("/L-HDD/")
 filename = "current.json"
 frame_count = 100
 

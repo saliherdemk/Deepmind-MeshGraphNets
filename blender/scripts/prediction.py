@@ -3,6 +3,7 @@ import math
 import os
 import bpy
 
+
 def create_flag():
     bpy.ops.mesh.primitive_plane_add(
         size=2, enter_editmode=False, align="WORLD", location=(0, 0, 0), scale=(1, 1, 1)
@@ -27,6 +28,7 @@ def create_flag():
 
     return flag
 
+
 def prepare_scene(scene_name):
     new_scene = bpy.data.scenes.new(scene_name)
     bpy.context.window.scene = new_scene
@@ -34,8 +36,9 @@ def prepare_scene(scene_name):
 
     return flag, new_scene
 
+
 def add_keyframes(scene, flag, anim_data):
-    vertex_data_by_frame = anim_data.values()
+    vertex_data_by_frame = anim_data
 
     frame_end = 1
 
@@ -50,22 +53,23 @@ def add_keyframes(scene, flag, anim_data):
     scene.frame_start = 1
     scene.simulation_frame_end = frame_end
     scene.frame_end = frame_end
-    
+
+
 def load_data(directory, filename):
     with open(os.path.join(directory, filename), "r") as f:
         data = json.load(f)
     return data
 
+
 def main(directory, filename, scene_name):
     bpy.ops.outliner.orphans_purge()
     data = load_data(directory, filename)
     flag, scene = prepare_scene(scene_name)
-    add_keyframes(scene, flag, data["mesh_pos"])
+    add_keyframes(scene, flag, data["pred_pos"])
 
 
-directory = os.path.expanduser("~/FINAL_PROJECT/data/")
-filename = "0.json"
+directory = os.path.expanduser("/L-HDD/rollouts/")
+filename = "rollout0.json"
 scene_name = "Pred-Scene"
 
 main(directory, filename, scene_name)
-

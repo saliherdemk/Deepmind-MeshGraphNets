@@ -3,8 +3,10 @@ import math
 import bpy
 import os
 
+
 def create_scene(scene_name):
     return bpy.data.scenes.new(scene_name)
+
 
 def create_flag(flag_name):
     bpy.ops.mesh.primitive_plane_add(
@@ -53,18 +55,18 @@ def create_flag(flag_name):
 
     return flag
 
+
 def create_wind(wind_name):
     bpy.ops.object.effector_add(type="WIND")
     wind = bpy.context.object
     wind.name = wind_name
     return wind
 
+
 def set_wind(wind, wind_data):
-    for attr, value in wind_data.items():
-        w = wind
-        if attr not in ["location", "rotation_euler"]:
-            w = wind.field
-        setattr(w, attr, value)
+    wind.field.strength = wind_data[0][0]
+    wind.rotation_euler = wind_data[0][1:]
+
 
 def adjust_scene(scene):
     # Set the frame rate to 5 fps (0.2 seconds per frame)
@@ -73,10 +75,12 @@ def adjust_scene(scene):
     scene.simulation_frame_end = 400
     bpy.ops.ptcache.free_bake_all()
 
-def load_data(file): 
+
+def load_data(file):
     with open(file, "r") as f:
         data = json.load(f)
     return data
+
 
 def main(scene_name, flag_name, wind_name, file):
     bpy.ops.outliner.orphans_purge()
@@ -85,17 +89,16 @@ def main(scene_name, flag_name, wind_name, file):
 
     flag = create_flag(flag_name)
     wind = create_wind(wind_name)
-    
-    data_wind = load_data(file)["wind"]
 
+    data_wind = load_data(file)["wind"]
 
     set_wind(wind, data_wind)
 
     adjust_scene(scene)
 
 
-file_path = os.path.expanduser("~/FINAL_PROJECT/data/")
-filename = "0.json"
+file_path = os.path.expanduser("/L-HDD/rollouts/")
+filename = "rollout0.json"
 
 scene_name = "GT-Scene"
 flag_name = "SampleFlag"
@@ -103,6 +106,3 @@ wind_name = "SampleWind"
 file = file_path + filename
 
 main(scene_name, flag_name, wind_name, file)
-
-
-

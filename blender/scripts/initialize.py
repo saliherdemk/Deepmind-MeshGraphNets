@@ -1,8 +1,10 @@
 import math
 import bpy
 
+
 def create_scene(scene_name):
     return bpy.data.scenes.new(scene_name)
+
 
 def create_flag():
     bpy.ops.mesh.primitive_plane_add(
@@ -84,6 +86,7 @@ def adjust_scene(scene):
     scene.simulation_frame_end = 400
     bpy.ops.ptcache.free_bake_all()
 
+
 def main():
     bpy.ops.outliner.orphans_purge()
     scene = create_scene("Main")
@@ -94,6 +97,5 @@ def main():
 
     adjust_scene(scene)
 
+
 main()
-
-
