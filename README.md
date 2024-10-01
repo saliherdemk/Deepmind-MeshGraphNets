@@ -34,7 +34,7 @@ python -m json_to_tfrecord.py --data_dir=jsonDataTrain/ --output_file=dataset/tr
 After this process, you should have `train.tfrecord` (or test.tfrecord-eval.tfrecord) and `meta.json` files.
 
 # Visulizer
-I created a visulizer to observe data format and understand relatitonship between cells and vertecies. Available [here](https://saliherdemk.github.io/Deepmind-MeshGraphNets/).
+I created a visualizer to observe the data format and understand the relationships between cells and vertices. It is available [here](https://saliherdemk.github.io/Deepmind-MeshGraphNets/).
 
 ## Running the model
 
