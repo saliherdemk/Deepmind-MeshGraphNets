@@ -4,6 +4,11 @@ class Organizer {
     this.meshes = [];
     this.showNodes = true;
     this.showMeshes = true;
+    this.setHeader("Deepmind-MeshGraphNets");
+  }
+
+  setHeader(text) {
+    document.getElementById("header").innerText = text;
   }
 
   setFrame(nodeData, meshData) {

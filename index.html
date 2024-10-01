@@ -8,7 +8,24 @@
   </head>
   <body>
     <main>
-      <input type="file" name="" value="" id="file-chooser" />
+      <div class="zoom">
+        <div>
+          <input type="file" id="file-chooser" style="display: none" />
+          <input
+            type="button"
+            value="Select Json File"
+            accept="*.json"
+            onclick="document.getElementById('file-chooser').click();"
+          />
+          Looking for cells and mesh_pos attributes.
+        </div>
+        <span id="header"></span>
+        <div>
+          You can use scroll whell
+          <button type="" onclick="zoomIn()">Zoom in</button>
+          <button type="" onclick="zoomOut()">Zoom out</button>
+        </div>
+      </div>
       <div id="canvas-container">
         <div id="resize-handle"></div>
       </div>

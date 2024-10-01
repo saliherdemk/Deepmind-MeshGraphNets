@@ -24,7 +24,7 @@ function createBtn(text) {
 function loadData(data) {
   meshData = data.cells;
 
-  nodes = Object.values(data.mesh_pos)[0];
+  nodes = data.mesh_pos;
   organizer.setData(nodes, meshData);
 }
 
@@ -56,15 +56,35 @@ function clearAllHighlightMeshes() {
   });
 }
 
+function zoomIn() {
+  scaleValue += 10;
+  organizer.nodes.forEach((node) => {
+    node.setScale(scaleValue);
+  });
+}
+
+function zoomOut() {
+  scaleValue -= 10;
+  organizer.nodes.forEach((node) => {
+    node.setScale(scaleValue);
+  });
+}
+
 document
   .querySelector('input[type="file"]')
   .addEventListener("change", function (event) {
+    var file = event.target.files[0];
     var reader = new FileReader();
     reader.onload = function () {
-      data = JSON.parse(reader.result);
-      loadData(data);
+      try {
+        data = JSON.parse(reader.result);
+        loadData(data);
+        organizer.setHeader(file.name);
+      } catch (e) {
+        alert("Invalid data");
+      }
     };
-    reader.readAsText(event.target.files[0]);
+    reader.readAsText(file);
   });
 
 vertexCheckbox.addEventListener("change", function () {

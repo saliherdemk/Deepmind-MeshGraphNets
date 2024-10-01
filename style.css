@@ -17,10 +17,6 @@
       cursor: ns-resize;
   }
 
-  #file-chooser {
-      background-color: lightblue;
-      margin: 5px 0px;
-  }
 
   h2 {
       margin: 0.5px;
@@ -30,6 +26,20 @@
       -moz-user-select: none;
       -ms-user-select: none;
       user-select: none;
+  }
+
+  .zoom {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid lightgray;
+      padding: 15px;
+      text-align: center;
+      font-size: 10px;
+  }
+
+  #header {
+      font-size: 2em;
+      font-weight: 700;
   }
 
   #controls {
