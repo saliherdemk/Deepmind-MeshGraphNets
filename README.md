@@ -28,7 +28,7 @@ If you have new generation card, you have to use [nvidia-tensorflow](https://git
 You can either download the dataset [here](https://www.kaggle.com/datasets/saliherdemkaymak/flag-dataset) or generate it using the provided scripts in the Blender folder.
 Open the `Flag-sim.blend` file and generate data using the `Generate Data` script. Once you have created the JSON files, convert them to TFRecord format with `json_to_tfrecord.py`.
 ```
-python -m json_to_tfrecord.py --data_dir=jsonDataTrain/ --output_dir=dataset/train.tfrecord
+python -m json_to_tfrecord.py --data_dir=jsonDataTrain/ --output_file=dataset/train.tfrecord
 ```
 
 After this process, you should have `train.tfrecord` (or test.tfrecord-eval.tfrecord) and `meta.json` files.
@@ -57,7 +57,7 @@ Plot with `matplotlib`:
 ```
 python -m plot_cloth --rollout_path=rollouts/rollout0.json
 ```
-Simulate in `blender`: In the prediction script, change the directory and filename, then execute the script. This will create a new scene that contains a P-Flag. You can now play the animation. 
+Simulate in `blender`: In the prediction script, change the directory and filename, then execute the script. This will create a new scene that contains a `P-Flag`. You can now play the animation. 
 
 ## CHECKPOINTS
 You can access model weights from [here](https://drive.google.com/drive/u/0/folders/1eu2GXMEJ-R_ikhRkLZ436r-sHNfWUerV). Note that those were not trained using the dataset shared on Kaggle.
