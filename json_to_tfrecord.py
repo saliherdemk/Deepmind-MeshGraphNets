@@ -1,9 +1,9 @@
 import argparse
 from pathlib import Path
 import tensorflow as tf
-from multiprocessing import Process, Queue, cpu_count
 import numpy as np
 import json
+import concurrent.futures
 
 
 def process_json_data(path):
@@ -41,63 +41,90 @@ def process_json_data(path):
 
 def byte_feature(value):
     value = (
-        value.numpy() if tf.executing_eagerly() else value.eval(session=tf.Session())
+        value.numpy()
+        if tf.executing_eagerly()
+        else value.eval(session=tf.compat.v1.Session())
     )
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value.tobytes()]))
 
 
-def worker(data_queue, result_queue, worker_id):
-    while not data_queue.empty():
-        path = data_queue.get(block=True)
-        print(f"Worker {worker_id}: Processing {path}")
-        try:
-            cells, mesh_pos, node_type, world_pos, wind_training, wind = (
-                process_json_data(path)
-            )
-            shapes = {
-                "cells": cells.shape.as_list(),
-                "mesh_pos": mesh_pos.shape.as_list(),
-                "node_type": node_type.shape.as_list(),
-                "world_pos": world_pos.shape.as_list(),
-                "wind_training": wind_training.shape.as_list(),
-                "wind": wind.shape.as_list(),
-            }
+def process_file(path):
+    try:
+        cells, mesh_pos, node_type, world_pos, wind_training, wind = process_json_data(
+            path
+        )
+        print(f"Processing {path}")
 
-            features = {
-                "cells": byte_feature(tf.reshape(cells, [-1])),
-                "mesh_pos": byte_feature(tf.reshape(mesh_pos, [-1])),
-                "node_type": byte_feature(tf.reshape(node_type, [-1])),
-                "world_pos": byte_feature(tf.reshape(world_pos, [-1])),
-                "wind_training": byte_feature(tf.reshape(wind_training, [-1])),
-                "wind": byte_feature(tf.reshape(wind, [-1])),
-            }
+        shapes = {
+            "cells": cells.shape.as_list(),
+            "mesh_pos": mesh_pos.shape.as_list(),
+            "node_type": node_type.shape.as_list(),
+            "world_pos": world_pos.shape.as_list(),
+            "wind_training": wind_training.shape.as_list(),
+            "wind": wind.shape.as_list(),
+        }
 
-            proto = tf.train.Example(features=tf.train.Features(feature=features))
-            tf_data = proto.SerializeToString()
-            result_queue.put((tf_data, shapes, path))
-        except Exception as e:
-            print(f"Worker {worker_id}: Error processing {path}: {e}")
+        features = {
+            "cells": byte_feature(tf.reshape(cells, [-1])),
+            "mesh_pos": byte_feature(tf.reshape(mesh_pos, [-1])),
+            "node_type": byte_feature(tf.reshape(node_type, [-1])),
+            "world_pos": byte_feature(tf.reshape(world_pos, [-1])),
+            "wind_training": byte_feature(tf.reshape(wind_training, [-1])),
+            "wind": byte_feature(tf.reshape(wind, [-1])),
+        }
+
+        proto = tf.train.Example(features=tf.train.Features(feature=features))
+        tf_data = proto.SerializeToString()
+
+        return tf_data, shapes
+
+    except Exception as e:
+        print(f"Error processing {path}: {e}")
+        return None, None
 
 
-def tfrecord_write(result_queue, output_file, length):
-    processed = 0
-    shapes_prev = {}
+def process_and_write_data_in_batches(file_paths, output_file, batch_size=300):
+    shapes_prev = None
 
     with tf.io.TFRecordWriter(str(output_file)) as writer:
-        while processed < length:
-            tf_data, shapes, path = result_queue.get(block=True)
-            writer.write(tf_data)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+            batch = []
+            for path in file_paths:
+                batch.append(path)
+                if len(batch) >= batch_size:
+                    futures = [executor.submit(process_file, p) for p in batch]
 
-            if processed == 0:
-                shapes_prev = shapes
-            else:
-                assert (
-                    shapes_prev == shapes
-                ), f"Error: tensor shapes from data file {path} don't match."
+                    for future in concurrent.futures.as_completed(futures):
+                        tf_data, shapes = future.result()
+                        if tf_data:
+                            writer.write(tf_data)
+                            if shapes_prev is None:
+                                shapes_prev = shapes
 
-            processed += 1
-            print(f"Processed {processed}/{length} data files.")
+                            else:
+                                assert (
+                                    shapes_prev == shapes
+                                ), f"Error: tensor shapes from data file don't match."
+                    batch.clear()
 
+            if batch:
+                futures = [executor.submit(process_file, p) for p in batch]
+                for future in concurrent.futures.as_completed(futures):
+                    tf_data, shapes = future.result()
+                    if tf_data:
+                        writer.write(tf_data)
+                        if shapes_prev is None:
+                            shapes_prev = shapes
+                        else:
+                            assert (
+                                shapes_prev == shapes
+                            ), f"Error: tensor shapes from data file don't match."
+                print(f"Processed last batch {len(file_paths)} files.")
+
+    return shapes_prev
+
+
+def write_metadata(output_file, shapes_prev):
     features = {
         "cells": {
             "type": "static",
@@ -170,27 +197,9 @@ if __name__ == "__main__":
 
     data_path = Path(args.data_dir)
     output_path = Path(args.output_file)
-    data_files = list(data_path.glob("*.json"))
 
-    data_queue = Queue()
-    for path in data_files:
-        data_queue.put(path)
+    # Process files in batches to improve startup speed and reduce memory load
+    data_files = data_path.glob("*.json")  # lazy iterator instead of list
+    shapes = process_and_write_data_in_batches(data_files, output_path, batch_size=100)
 
-    result_queue = Queue()
-
-    num_workers = max(1, cpu_count() // 2)
-    processes = [
-        Process(target=worker, args=(data_queue, result_queue, i))
-        for i in range(num_workers)
-    ]
-    writer_process = Process(
-        target=tfrecord_write, args=(result_queue, output_path, len(data_files))
-    )
-
-    writer_process.start()
-    for p in processes:
-        p.start()
-
-    for p in processes:
-        p.join()
-    writer_process.join()
+    write_metadata(output_path, shapes)
