@@ -12,6 +12,8 @@ This repository provides a specialized version of Learning Mesh-Based Simulation
       year={2021}
     }
 
+<img src="https://github.com/saliherdemk/Deepmind-MeshGraphNets/blob/master/media/demo.gif" width="600" height="338">
+
 ## Setup
 
 Some dependencies have been updated, requiring Python 3.7.10. Change the local Python version with [pyenv](https://github.com/pyenv/pyenv) to the value inside the .python-version file. Once you have done this, prepare the environment and install the dependencies.
